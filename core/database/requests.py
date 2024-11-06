@@ -185,14 +185,14 @@ class ServiceRequests:
             await session.commit()
             await session.refresh(new_admin)
             print(new_admin)
-    # async def drop_users():
-    #     async with async_session() as session:
-    #         await session.execute(text("DROP TABLE users CASCADE;"))
-    #         await session.commit()
-    #         print("Users table dropped")
+
+    @staticmethod
+    async def drop_all_base():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
 
 
-# asyncio.run(WorkoutsRequests.show_workouts())
+# asyncio.run(ServiceRequests.drop_all_base())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
 
 

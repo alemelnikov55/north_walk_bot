@@ -98,7 +98,7 @@ async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext)
     workuot = await WorkoutsRequests.create_workout(new_date, workout_type_id, user_id)
 
     answer_message = (f'Тренировка <b>{workout_types[workuot.type_id]}</b> добавлена на <b>{workuot.date.strftime("%d.%m")}</b>'
-                      f'в <b>{workuot.date.strftime("%H:%M")}</b>.\n '
+                      f' в <b>{workuot.date.strftime("%H:%M")}</b>.\n '
                       f'Вы можете добавить еще тренировки.')
 
     if isinstance(message, CallbackQuery):

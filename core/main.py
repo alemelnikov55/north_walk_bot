@@ -18,6 +18,7 @@ from handlers.add_workout import add_workout, set_time_for_workout, process_simp
 from handlers.add_user_handler import add_user_handler_process, add_user_handler_starter
 from handlers.sign_up_workouts_handler import no_available_workout_handler, sign_up_workout_handler, sign_up_workout_to_db
 from handlers.show_registration_handler import show_my_registrations
+from handlers.start_handler import start_handler
 
 dispatcher = Dispatcher()
 init_bot = Bot(token=MainSettings.TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
@@ -33,16 +34,17 @@ async def start_bot(bot: Bot, dp: Dispatcher):
     dp.callback_query.register(sign_up_workout_to_db, F.data.startswith('signup_'))
     dp.callback_query.register(no_available_workout_handler, F.data == 'None')
 
+    dp.message.register(start_handler, Command(commands='start'))
     dp.message.register(add_workout, Command(commands='add_walk'), IsAdmin())
     dp.message.register(custom_time_handler, ChooseWorkoutTimeState.CHOOSE_TIME)
 
-    dp.message.register(add_user_handler_starter, Command(commands='register'))
+    # dp.message.register(add_user_handler_starter, Command(commands='register'))
     dp.message.register(add_user_handler_process, UserAddState.ASK_USERNAME)
-    dp.message.register(show_my_registrations, Command(commands='my_walks'))
+    dp.message.register(show_my_registrations, Command(commands='мои_записи'))
 
     dp.message.register(sign_up_workout_handler, Command(commands='запись'))
 
-    dp.message.register(is_admin_test, IsAdmin())
+    # dp.message.register(is_admin_test, IsAdmin())
 
     try:
         await dp.start_polling(bot)
