@@ -3,10 +3,14 @@ import time
 from datetime import timedelta, datetime
 # import datetime
 
-from database.psql_engine import async_session, engine
-from database.data_models import Base, WorkoutType, Status, User, Workout, Admin, Registration
 from sqlalchemy import text
 from sqlalchemy.future import select
+
+from database.psql_engine import async_session, engine
+from database.data_models import Base, WorkoutType, Status, User, Workout, Admin, Registration
+
+from loader import MainSettings
+
 
 
 class UserRequest:
@@ -38,19 +42,18 @@ class WorkoutsRequests:
             result = await session.execute(
                 select(Workout, WorkoutType)
                 .where(Workout.date >= datetime.now())
-                .join(WorkoutType)
+                .join(WorkoutType).order_by(Workout.date)
             )
-            workouts = result.all()
+            workouts = result.scalar_one_or_none()
+            # print(result.scalar_one_or_none())
             return workouts
 
     @staticmethod
     async def get_type_workout_by_id(workout_id):
         async with async_session() as session:
-            result = await session.execute(
-                select(WorkoutType).where(WorkoutType.type_id == workout_id)
-            )
-            type_workout = result.scalar_one_or_none()
-            return type_workout
+            result = await session.get(WorkoutType, workout_id)
+            type_workout = result
+            return type_workout.type_name
 
     @staticmethod
     async def get_workout_by_id(workout_id: int):
@@ -79,7 +82,7 @@ class RegistrationRequests:
     async def get_registration_by_workout_id(workout_id: int):
         async with async_session() as session:
             result = await session.execute(
-                select(Registration, Workout)
+                (Registration, Workout)
                 .filter(Registration.workout_id == workout_id)
                 .join(Workout)
             )
@@ -89,16 +92,12 @@ class RegistrationRequests:
     @staticmethod
     async def get_workouts_by_user_id(user_id: int):
         async with async_session() as session:
-            # result = await session.execute(
-            #     select(Registration, Workout)
-            #     .filter(Registration.user_id == user_id).join(Workout)
-            # )
+
             result = await session.execute(select(Workout.date, WorkoutType.type_name)
                 .join(Registration, Registration.workout_id == Workout.workout_id)
                 .join(WorkoutType, Workout.type_id == WorkoutType.type_id)
-                .filter(Registration.user_id == user_id)
+                .filter(Registration.user_id == user_id).filter(Workout.date >= datetime.now())
                 )
-
             # results = [{"workout_date": workout.date, "workout_type": workout.type_name} for workout in result.all()]
             # print(results)
             # for workout in result.all():
@@ -115,7 +114,7 @@ class ServiceRequests:
 
     @staticmethod
     async def add_workout_types():
-        workout_types = ['Руки 💪', 'Ноги 🦵', 'Длительная ⌛️⌛️⌛️', 'Скоростная 🏎']
+        workout_types = ['Руки 💪', 'Ноги 🦶🦶', 'Длительная ⌛️⌛️⌛️', 'Скоростная 🏎']
 
         async with async_session() as session:
             for workout_type in workout_types:
@@ -192,5 +191,16 @@ class ServiceRequests:
     #         await session.commit()
     #         print("Users table dropped")
 
-# asyncio.run(RegistrationRequests.get_workouts_by_user_id(28191584))
-# asyncio.run(WorkoutsRequests.create_workout(datetime.now(), 1, 322096968))
+
+# asyncio.run(WorkoutsRequests.show_workouts())
+# print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
+
+
+async def create_and_fill_db():
+    await ServiceRequests.create_tables()
+    await ServiceRequests.add_workout_types()
+    await ServiceRequests.add_statuses_types()
+    await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[0], 'Alexey')
+    await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[1], 'Natasha')
+
+# asyncio.run(create_and_fill_db())

@@ -127,7 +127,7 @@ async def choose_time_for_workout_kb():
     """
     times_keyboard = InlineKeyboardBuilder()
 
-    times_keyboard.button(text='Утро ☀️', callback_data='time_morning')
+    times_keyboard.button(text='Утро ☀', callback_data='time_morning')
     times_keyboard.button(text='Вечер 🌓', callback_data='time_evening')
     times_keyboard.button(text='Вручную', callback_data='time_custom')
 

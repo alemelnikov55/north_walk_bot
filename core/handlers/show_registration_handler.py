@@ -1,6 +1,7 @@
 from aiogram.types import Message
 from database.requests import RegistrationRequests
 
+
 async def show_my_registrations(message: Message):
     """
     Обработчик для команды /my_walks

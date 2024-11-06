@@ -15,11 +15,16 @@ async def choose_workout_kb():
 
     available_workouts = await WorkoutsRequests.show_workouts()
     # print(available_workouts)
-    for workout, type_ in available_workouts:
-        date = workout.date.strftime('%d.%m')
-        workout_type = type_.type_name
-        workout_id = workout.workout_id
-        choose_workout_kb_builder.button(text=f'{date} {workout_type}', callback_data=f'signup_{workout_id}')
+    if available_workouts:
+        for workout, type_ in available_workouts:
+            date = workout.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
+            workout_type = type_.type_name
+            workout_id = workout.workout_id
+            choose_workout_kb_builder.button(text=f'{date} | {workout_type}', callback_data=f'signup_{workout_id}')
+
+    else:
+        choose_workout_kb_builder.button(text='Нет доступных тренировок',
+                                         callback_data='None')
 
     choose_workout_kb_builder.adjust(1)
     return choose_workout_kb_builder.as_markup()
@@ -40,3 +45,6 @@ async def sign_up_workout_to_db(call: CallbackQuery) -> None:
     await call.message.answer(f'Вы записаны на тренировку:\n'
                               f'<b>{date} в {time} тебя ждет {workout_type}</b>')
 
+
+async def no_available_workout_handler(call: CallbackQuery) -> None:
+    await call.answer('Ожидайте добавления тренировок')

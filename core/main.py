@@ -16,7 +16,7 @@ from handlers.test import is_admin_test
 from handlers.add_workout import add_workout, set_time_for_workout, process_simple_calendar, add_workout_to_db, \
     choose_time_for_workout_handler, custom_time_handler
 from handlers.add_user_handler import add_user_handler_process, add_user_handler_starter
-from handlers.sign_up_workouts_handler import sign_up_workout_handler, sign_up_workout_to_db
+from handlers.sign_up_workouts_handler import no_available_workout_handler, sign_up_workout_handler, sign_up_workout_to_db
 from handlers.show_registration_handler import show_my_registrations
 
 dispatcher = Dispatcher()
@@ -31,6 +31,7 @@ async def start_bot(bot: Bot, dp: Dispatcher):
     dp.callback_query.register(choose_time_for_workout_handler, F.data.startswith('choose_'))
     dp.callback_query.register(set_time_for_workout, F.data.startswith('time_'))
     dp.callback_query.register(sign_up_workout_to_db, F.data.startswith('signup_'))
+    dp.callback_query.register(no_available_workout_handler, F.data == 'None')
 
     dp.message.register(add_workout, Command(commands='add_walk'), IsAdmin())
     dp.message.register(custom_time_handler, ChooseWorkoutTimeState.CHOOSE_TIME)
