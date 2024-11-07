@@ -42,7 +42,7 @@ async def start_bot(bot: Bot, dp: Dispatcher):
     dp.message.register(add_user_handler_process, UserAddState.ASK_USERNAME)
     dp.message.register(show_my_registrations, Command(commands='мои_записи'))
 
-    dp.message.register(sign_up_workout_handler, Command(commands='запись'))
+    dp.message.register(sign_up_workout_handler, Command(commands='sign_up'))
 
     # dp.message.register(is_admin_test, IsAdmin())
 

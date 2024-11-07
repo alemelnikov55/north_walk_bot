@@ -5,12 +5,12 @@ from datetime import timedelta, datetime
 
 from sqlalchemy import text
 from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 
 from database.psql_engine import async_session, engine
 from database.data_models import Base, WorkoutType, Status, User, Workout, Admin, Registration
 
 from loader import MainSettings
-
 
 
 class UserRequest:
@@ -44,7 +44,7 @@ class WorkoutsRequests:
                 .where(Workout.date >= datetime.now())
                 .join(WorkoutType).order_by(Workout.date)
             )
-            workouts = result.scalar_one_or_none()
+            workouts = result.all()
             # print(result.scalar_one_or_none())
             return workouts
 
@@ -70,13 +70,27 @@ class WorkoutsRequests:
 class RegistrationRequests:
 
     @staticmethod
-    async def add_registration(user_id: int, workout_id: int):
+    async def is_already_exists(user_id: int, workout_id: int):
+        async with async_session() as session:
+            result = await session.execute(select(Registration).filter_by(user_id=user_id, workout_id=workout_id))
+
+            existing_registration = result.scalars().first()
+            if existing_registration:
+                return True
+            return False
+
+    @staticmethod
+    async def sign_in(user_id: int, workout_id: int):
         async with async_session() as session:
             new_registration = Registration(user_id=user_id, workout_id=workout_id)
             session.add(new_registration)
-            await session.commit()
-            await session.refresh(new_registration)
-            return new_registration
+
+            try:
+                await session.commit()
+                # return new_registration
+            except IntegrityError:
+                await session.rollback()
+                print("Ошибка при записи на тренировку.")
 
     @staticmethod
     async def get_registration_by_workout_id(workout_id: int):
@@ -161,7 +175,8 @@ class ServiceRequests:
     async def clear_all_data():
         async with async_session() as session:
             await session.execute(text(
-                "TRUNCATE TABLE users, admins, workout_types, workouts, statuses, registrations, attendance_history RESTART IDENTITY CASCADE"))
+                # "TRUNCATE TABLE users, admins, workout_types, workouts, statuses, registrations, attendance_history RESTART IDENTITY CASCADE"))
+                "TRUNCATE TABLE workouts RESTART IDENTITY CASCADE"))
             await session.commit()
 
     @staticmethod
@@ -192,7 +207,7 @@ class ServiceRequests:
             await conn.run_sync(Base.metadata.drop_all)
 
 
-# asyncio.run(ServiceRequests.drop_all_base())
+# asyncio.run(ServiceRequests.clear_all_data())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
 
 

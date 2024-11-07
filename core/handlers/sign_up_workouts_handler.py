@@ -34,7 +34,14 @@ async def sign_up_workout_to_db(call: CallbackQuery) -> None:
     workout_id = int(call.data.split('_')[-1])
     user_id = call.from_user.id
 
-    await RegistrationRequests.add_registration(user_id, workout_id)
+    existing_check = await RegistrationRequests.is_already_exists(user_id, workout_id)
+
+    if existing_check:
+        await call.message.answer('Вы уже записаны на эту тренировку')
+        await call.answer('Уже записаны')
+        return
+
+    await RegistrationRequests.sign_in(user_id, workout_id)
 
     workout_data = await WorkoutsRequests.get_workout_by_id(workout_id)
     # print(workout_data[0], workout_data[1])
@@ -44,6 +51,7 @@ async def sign_up_workout_to_db(call: CallbackQuery) -> None:
 
     await call.message.answer(f'Вы записаны на тренировку:\n'
                               f'<b>{date} в {time} тебя ждет {workout_type}</b>')
+    await call.answer('Вы записаны на тренировку')
 
 
 async def no_available_workout_handler(call: CallbackQuery) -> None:
