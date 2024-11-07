@@ -3,7 +3,7 @@ import time
 from datetime import timedelta, datetime
 # import datetime
 
-from sqlalchemy import text
+from sqlalchemy import text, func
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
@@ -106,12 +106,12 @@ class RegistrationRequests:
     @staticmethod
     async def get_workouts_by_user_id(user_id: int):
         async with async_session() as session:
-
             result = await session.execute(select(Workout.date, WorkoutType.type_name)
-                .join(Registration, Registration.workout_id == Workout.workout_id)
-                .join(WorkoutType, Workout.type_id == WorkoutType.type_id)
-                .filter(Registration.user_id == user_id).filter(Workout.date >= datetime.now())
-                )
+            .join(Registration, Registration.workout_id == Workout.workout_id)
+            .join(WorkoutType, Workout.type_id == WorkoutType.type_id)
+            .filter(Registration.user_id == user_id).filter(
+                Workout.date >= datetime.now())
+            )
             # results = [{"workout_date": workout.date, "workout_type": workout.type_name} for workout in result.all()]
             # print(results)
             # for workout in result.all():
@@ -119,6 +119,46 @@ class RegistrationRequests:
             #     print(f'{workout.date.strftime("%m.%d в %H:%M")} - {workout.type_name}')
             # print('\n'.join(message))
             return result.all()
+
+    @staticmethod
+    async def get_all_available_workouts():
+        async with async_session() as session:
+            result = await session.execute(
+                select(Workout, WorkoutType)
+                .where(Workout.date >= datetime.now())
+                .join(WorkoutType).order_by(Workout.date)
+            )
+            workouts = result.all()
+            return workouts
+
+    @staticmethod
+    async def count_sings_for_workouts():
+        async with async_session() as session:
+            result = await session.execute(
+                select(
+                    Workout.workout_id,
+                    func.count(Registration.user_id).label("registration_count"))
+                .join(Registration, Workout.workout_id == Registration.workout_id)
+                .filter(Workout.date >= datetime.now())
+                .group_by(Workout.workout_id, Workout.date)
+                .order_by(Workout.date))
+
+        walks = result.all()
+        # id date count
+        return walks
+
+    @staticmethod
+    async def get_workout_inspect(workout_id: int):
+        async with async_session() as session:
+            result = await session.execute(
+                select(User.name)
+                .join(Registration, Registration.user_id == User.user_id)
+                .filter(Registration.workout_id == workout_id)
+            )
+
+        users = result.all()
+        print(users)
+        return users
 
 
 class ServiceRequests:
@@ -209,6 +249,7 @@ class ServiceRequests:
 
 # asyncio.run(ServiceRequests.clear_all_data())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
+# asyncio.run(RegistrationRequests.get_workout_inspect(1))
 
 
 async def create_and_fill_db():
