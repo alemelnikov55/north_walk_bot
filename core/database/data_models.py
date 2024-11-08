@@ -56,7 +56,7 @@ class Registration(Base):
 
     registration_id = Column(SmallInteger, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, ForeignKey('users.user_id'))
-    workout_id = Column(SmallInteger, ForeignKey('workouts.workout_id'))
+    workout_id = Column(SmallInteger, ForeignKey('workouts.workout_id', ondelete='CASCADE'))
     status_id = Column(SmallInteger, ForeignKey('statuses.status_id'), default=1)
     registered_at = Column(DateTime, default=func.now())
 

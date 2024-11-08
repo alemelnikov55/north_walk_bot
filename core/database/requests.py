@@ -66,6 +66,25 @@ class WorkoutsRequests:
             workout = result.all()
         return workout
 
+    @staticmethod
+    async def delete_workout(workout_id: int):
+        async with async_session() as session:
+            # query = select(Workout).filter_by(workout_id=workout_id)
+            result = await session.execute(
+                select(Workout)
+                .filter_by(workout_id=workout_id))
+            print(result)
+            workout = result.scalars().first()
+
+            # Если тренировка найдена, удаляем её
+            if workout:
+                await session.delete(workout)
+                await session.commit()
+                print("Тренировка и связанные записи успешно удалены.")
+                return "Тренировка и связанные записи успешно удалены."
+            else:
+                return 'Возникла проблема при удалении просьба обратиться к администраору'
+
 
 class RegistrationRequests:
 
@@ -155,9 +174,7 @@ class RegistrationRequests:
                 .join(Registration, Registration.user_id == User.user_id)
                 .filter(Registration.workout_id == workout_id)
             )
-
         users = result.all()
-        print(users)
         return users
 
 

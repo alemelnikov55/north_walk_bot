@@ -4,23 +4,23 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram_calendar import SimpleCalendarCallback
-from aiogram.types import Update
 
 from loader import MainSettings
 from utils.support_commands import start_bot_sup_handler, stop_bot_sup_handler
-from utils.states import UserAddState, ChooseWorkoutTimeState
+from utils.states import ChooseWorkoutTimeState
 
 from filters.is_admin_filter import IsAdmin
 
 from handlers.test import is_admin_test
-from handlers.add_workout import add_workout, set_time_for_workout, process_simple_calendar, add_workout_to_db, \
+from handlers.add_workout import add_workout, set_time_for_workout, process_simple_calendar, \
     choose_time_for_workout_handler, custom_time_handler
-from handlers.add_user_handler import add_user_handler_process, add_user_handler_starter
-from handlers.sign_up_workouts_handler import no_available_workout_handler, sign_up_workout_handler, sign_up_workout_to_db
+from handlers.sign_up_workouts_handler import no_available_workout_handler, sign_up_workout_handler, \
+    sign_up_workout_to_db
 from handlers.show_registration_handler import show_my_registrations
 from handlers.start_handler import start_handler
 
-from handlers.admin.show_walk_handler import show_walks_handler, inspect_workout
+from handlers.admin.show_walk_handler import show_walks_handler, inspect_workout, \
+    delete_workout_kb_handler
 
 dispatcher = Dispatcher()
 init_bot = Bot(token=MainSettings.TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
@@ -36,6 +36,7 @@ async def start_bot(bot: Bot, dp: Dispatcher):
     dp.callback_query.register(sign_up_workout_to_db, F.data.startswith('signup_'))
     dp.callback_query.register(no_available_workout_handler, F.data == 'None')
     dp.callback_query.register(inspect_workout, F.data.startswith('walks_'))
+    dp.callback_query.register(delete_workout_kb_handler, F.data.startswith('delete_'))
 
     dp.message.register(start_handler, Command(commands='start'))
     dp.message.register(add_workout, Command(commands='add_walk'), IsAdmin())
