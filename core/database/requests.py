@@ -1,7 +1,5 @@
 import asyncio
-import time
-from datetime import timedelta, datetime
-# import datetime
+from datetime import datetime
 
 from sqlalchemy import text, func
 from sqlalchemy.future import select
@@ -9,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database.psql_engine import async_session, engine
 from database.data_models import Base, WorkoutType, Status, User, Workout, Admin, Registration
-
+from utils.workouts_types import workout_types
 from loader import MainSettings
 
 
@@ -184,11 +182,24 @@ class ServiceRequests:
     """
 
     @staticmethod
+    async def create_and_fill_db():
+        """
+        Создание таблиц БД
+        """
+        await ServiceRequests.create_tables()
+        await ServiceRequests.add_workout_types()
+        await ServiceRequests.add_statuses_types()
+        try:
+            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[0], 'Alexey')
+            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[1], 'Natasha')
+        except IntegrityError as e:
+            print('\nДанные уже есть в таблице', e)
+
+    @staticmethod
     async def add_workout_types():
-        workout_types = ['Руки 💪', 'Ноги 🦶🦶', 'Длительная ⌛️⌛️⌛️', 'Скоростная 🏎']
 
         async with async_session() as session:
-            for workout_type in workout_types:
+            for workout_type in workout_types.values():
                 # Проверяем, существует ли уже такой тип тренировки
                 result = await session.execute(
                     select(WorkoutType).where(WorkoutType.type_name == workout_type)
@@ -269,11 +280,6 @@ class ServiceRequests:
 # asyncio.run(RegistrationRequests.get_workout_inspect(1))
 
 
-async def create_and_fill_db():
-    await ServiceRequests.create_tables()
-    await ServiceRequests.add_workout_types()
-    await ServiceRequests.add_statuses_types()
-    await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[0], 'Alexey')
-    await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[1], 'Natasha')
+
 
 # asyncio.run(create_and_fill_db())

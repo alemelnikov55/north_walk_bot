@@ -1,8 +1,6 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from database.data_models import Workout
 from database.requests import RegistrationRequests, WorkoutsRequests
 
 
@@ -65,7 +63,8 @@ async def inspect_workout(call: CallbackQuery):
     workout_id = int(call.data.split('_')[1])
     workout_info = await RegistrationRequests.get_workout_inspect(workout_id)
     walkers = [walker[0] for walker in workout_info]
-    await call.message.answer(f'Информация о тренировке:\n{'\n'.join(walkers)}',
+    walkers = "\n".join(walkers)
+    await call.message.answer(f"Информация о тренировке:\n{walkers}",
                               reply_markup=await delete_workout_kb(workout_id))
     await call.answer('')
 
