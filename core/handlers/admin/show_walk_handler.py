@@ -9,23 +9,7 @@ async def show_walks_handler(message: Message):
     Обработчик команды /show_walk
 
     Выводи список доступных тренировок администратору с кнопокй для удаления тренировок
-    :param message:
-    :return:
     """
-    # available_walks = await RegistrationRequests.get_all_available_workouts()
-    #
-    # if available_walks:
-    #     walks_info = []
-    #     index_id = 0
-    #     for workout, type_ in available_walks:
-    #         index_id += 1
-    #         date = workout.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
-    #         workout_type = type_.type_name
-    #         workout_id = workout.workout_id
-    #         await state.update_data({str(index_id): workout_id})
-    #         walks_info.append(f'{workout_id}| {date} | {workout_type}')
-    #
-    # answer_msg = 'Доступные транировки:\n' + '\n'.join(walks_info)
     await message.answer('Нажмите на или удалить ее', reply_markup=await all_workouts_info_kb())
 
 

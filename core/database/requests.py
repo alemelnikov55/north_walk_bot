@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import text, func
+from sqlalchemy import text, func, update
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
@@ -47,13 +47,6 @@ class WorkoutsRequests:
             return workouts
 
     @staticmethod
-    async def get_type_workout_by_id(workout_id):
-        async with async_session() as session:
-            result = await session.get(WorkoutType, workout_id)
-            type_workout = result
-            return type_workout.type_name
-
-    @staticmethod
     async def get_workout_by_id(workout_id: int):
         async with async_session() as session:
             result = await session.execute(
@@ -71,7 +64,6 @@ class WorkoutsRequests:
             result = await session.execute(
                 select(Workout)
                 .filter_by(workout_id=workout_id))
-            print(result)
             workout = result.scalars().first()
 
             # Если тренировка найдена, удаляем её
@@ -89,7 +81,12 @@ class RegistrationRequests:
     @staticmethod
     async def is_already_exists(user_id: int, workout_id: int):
         async with async_session() as session:
-            result = await session.execute(select(Registration).filter_by(user_id=user_id, workout_id=workout_id))
+            result = await session.execute(
+                select(Registration)
+                .filter_by(user_id=user_id,
+                           workout_id=workout_id,
+                           status_id=1)
+            )
 
             existing_registration = result.scalars().first()
             if existing_registration:
@@ -107,10 +104,30 @@ class RegistrationRequests:
                 # return new_registration
             except IntegrityError:
                 await session.rollback()
-                print("Ошибка при записи на тренировку.")
+                await RegistrationRequests.change_status(user_id, workout_id)
+                # print("Ошибка при записи на тренировку.")
+
+    @staticmethod
+    async def change_status(user_id: int, workout_id: int):
+        async with async_session() as session:
+            result = await session.execute(
+                select(Registration)
+                .filter_by(user_id=user_id, workout_id=workout_id)
+            )
+            registration = result.scalars().first()
+
+            if registration:
+                registration.status_id = 1
+                await session.commit()
+                print("Статус тренировки изменен.")
+                return False
+            else:
+                print("Ошибка при изменении статуса тренировки.")
+
 
     @staticmethod
     async def get_registration_by_workout_id(workout_id: int):
+        # TODO удалить метод, если не нужен
         async with async_session() as session:
             result = await session.execute(
                 (Registration, Workout)
@@ -123,11 +140,13 @@ class RegistrationRequests:
     @staticmethod
     async def get_workouts_by_user_id(user_id: int):
         async with async_session() as session:
-            result = await session.execute(select(Workout.date, WorkoutType.type_name)
+            result = await session.execute(select(Workout.date, WorkoutType.type_name, Registration.registration_id)
             .join(Registration, Registration.workout_id == Workout.workout_id)
             .join(WorkoutType, Workout.type_id == WorkoutType.type_id)
             .filter(Registration.user_id == user_id).filter(
-                Workout.date >= datetime.now())
+                Workout.date >= datetime.now(),
+                Registration.status_id == 1)
+            .order_by(Workout.date)
             )
             # results = [{"workout_date": workout.date, "workout_type": workout.type_name} for workout in result.all()]
             # print(results)
@@ -136,6 +155,7 @@ class RegistrationRequests:
             #     print(f'{workout.date.strftime("%m.%d в %H:%M")} - {workout.type_name}')
             # print('\n'.join(message))
             return result.all()
+
 
     @staticmethod
     async def get_all_available_workouts():
@@ -156,7 +176,7 @@ class RegistrationRequests:
                     Workout.workout_id,
                     func.count(Registration.user_id).label("registration_count"))
                 .join(Registration, Workout.workout_id == Registration.workout_id)
-                .filter(Workout.date >= datetime.now())
+                .filter(Workout.date >= datetime.now(), Registration.status_id == 1)
                 .group_by(Workout.workout_id, Workout.date)
                 .order_by(Workout.date))
 
@@ -170,10 +190,31 @@ class RegistrationRequests:
             result = await session.execute(
                 select(User.name)
                 .join(Registration, Registration.user_id == User.user_id)
-                .filter(Registration.workout_id == workout_id)
+                .filter(Registration.workout_id == workout_id, Registration.status_id == 1)
             )
         users = result.all()
         return users
+
+    @staticmethod
+    async def give_up_registration(registration_id: int):
+        async with async_session() as session:
+            result = await session.execute(
+                update(Registration).where(Registration.registration_id == registration_id).values(status_id=4)
+            )
+            await session.commit()
+            return 'Запись на тренировку успешно отменена.'
+
+    @staticmethod
+    async def get_workout_info_by_reg_id(registration_id: int):
+        async with async_session() as session:
+            result = await session.execute(
+                select(Workout.date, WorkoutType.type_name)
+                .join(Registration, Registration.workout_id == Workout.workout_id)
+                .join(WorkoutType, Workout.type_id == WorkoutType.type_id)
+                .filter(Registration.registration_id == registration_id)
+            )
+            workout_info = result.all()
+            return workout_info
 
 
 class ServiceRequests:
@@ -274,12 +315,9 @@ class ServiceRequests:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
 
-
 # asyncio.run(ServiceRequests.clear_all_data())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
 # asyncio.run(RegistrationRequests.get_workout_inspect(1))
-
-
 
 
 # asyncio.run(create_and_fill_db())
