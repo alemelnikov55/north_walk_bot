@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import text, func, update
+from sqlalchemy import text, func, update, inspect, Table, Column
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
@@ -257,20 +257,6 @@ class ServiceRequests:
     """
 
     @staticmethod
-    async def create_and_fill_db():
-        """
-        Создание таблиц БД
-        """
-        await ServiceRequests.create_tables()
-        await ServiceRequests.add_workout_types()
-        await ServiceRequests.add_statuses_types()
-        try:
-            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[0], 'Alexey')
-            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[1], 'Natasha')
-        except IntegrityError as e:
-            print('\nДанные уже есть в таблице', e)
-
-    @staticmethod
     async def add_workout_types():
 
         async with async_session() as session:
@@ -348,6 +334,56 @@ class ServiceRequests:
     async def drop_all_base():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+
+
+class StartServiceRequest:
+    @staticmethod
+    async def create_and_fill_db():
+        """
+        Создание таблиц БД
+        """
+        await ServiceRequests.create_tables()
+        await ServiceRequests.add_workout_types()
+        await ServiceRequests.add_statuses_types()
+        await StartServiceRequest.check_column_in_tables()
+        try:
+            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[0], 'Alexey')
+            await ServiceRequests.add_admin(MainSettings.ADMIN_LIST[1], 'Natasha')
+        except IntegrityError as e:
+            print('\nДанные уже есть в таблице', e)
+
+    @staticmethod
+    async def add_column_to_table(conn, table: Table, column: Column):
+        """
+        Добавляет недостающий столбец в таблицу.
+        """
+        column_type = column.type.compile(dialect=conn.dialect)
+        column_default = f"DEFAULT {column.default}" if column.default is not None else ""
+        nullable = "NULL" if column.nullable else "NOT NULL"
+
+        alter_query = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column_type} {nullable} {column_default}"
+        print('Столбец добавлен')
+        await conn.execute(text(alter_query))
+        await conn.commit()
+
+    @staticmethod
+    async def get_existing_columns(table_name, conn):
+        return await conn.run_sync(
+            lambda sync_conn: {col["name"] for col in inspect(sync_conn).get_columns(table_name)})
+
+    @staticmethod
+    async def check_column_in_tables():
+        async with engine.connect() as conn:
+            # Получаем список таблиц и их столбцов через sync-инспектор
+            for table_name, table in Base.metadata.tables.items():
+                # Проверяем, существует ли таблица
+                existing_columns = await StartServiceRequest.get_existing_columns(table_name, conn)
+
+                # Сравниваем столбцы и добавляем недостающие
+                for column_name, column in table.columns.items():
+                    if column_name not in existing_columns:
+                        print(f"Добавляем отсутствующий столбец '{column_name}' в таблицу '{table_name}'")
+                        await StartServiceRequest.add_column_to_table(conn, table, column)
 
 # asyncio.run(ServiceRequests.clear_all_data())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
