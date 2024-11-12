@@ -1,5 +1,4 @@
-from sqlalchemy.orm import relationship
-from sqlalchemy import Column, BigInteger, SmallInteger, String, ForeignKey, DateTime, func, Table
+from sqlalchemy import Column, BigInteger, SmallInteger, String, ForeignKey, DateTime, func, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -39,9 +38,6 @@ class Workout(Base):
     date = Column(DateTime, nullable=False)
     created_by = Column(BigInteger, ForeignKey('admins.admin_id'))
     created_at = Column(DateTime, default=func.now())
-    #
-    # type = relationship("WorkoutType")
-    # creator = relationship("Admin")
 
 
 class Status(Base):
@@ -58,11 +54,8 @@ class Registration(Base):
     user_id = Column(BigInteger, ForeignKey('users.user_id'))
     workout_id = Column(SmallInteger, ForeignKey('workouts.workout_id', ondelete='CASCADE'))
     status_id = Column(SmallInteger, ForeignKey('statuses.status_id'), default=1)
+    is_payed = Column(Boolean, nullable=True, default=None)
     registered_at = Column(DateTime, default=func.now())
-
-    # user = relationship("User")
-    # workout = relationship("Workout")
-    # status = relationship("Status")
 
 
 class AttendanceHistory(Base):
@@ -72,6 +65,3 @@ class AttendanceHistory(Base):
     user_id = Column(BigInteger, ForeignKey('users.user_id'))
     workout_id = Column(SmallInteger, ForeignKey('workouts.workout_id'))
     attended_at = Column(DateTime, default=func.now())
-
-    # user = relationship("User")
-    # workout = relationship("Workout")

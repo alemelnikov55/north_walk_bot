@@ -53,6 +53,9 @@ async def choose_time_for_workout_handler(call: CallbackQuery, state: FSMContext
 
 
 async def set_time_for_workout(call: CallbackQuery, state: FSMContext):
+    """
+    Обработка, выбранного времени для тренировки
+    """
     time = call.data.split('_')[-1]
     if time == 'morning':
         time = timedelta(hours=8, minutes=30)

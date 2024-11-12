@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import List
 
 from sqlalchemy import text, func, update
 from sqlalchemy.future import select
@@ -79,6 +80,22 @@ class WorkoutsRequests:
 class RegistrationRequests:
 
     @staticmethod
+    async def get_last_week_workouts(day_before: int):
+
+        date = datetime.now() - timedelta(days=day_before)
+
+        async with async_session() as session:
+            result = await session.execute(
+                select(Workout, WorkoutType)
+                .where(Workout.date >= date, Workout.date <= datetime.now())
+                .join(WorkoutType)
+                .order_by(Workout.date)
+            )
+        workout_for_check = result.all()
+
+        return workout_for_check
+
+    @staticmethod
     async def is_already_exists(user_id: int, workout_id: int):
         async with async_session() as session:
             result = await session.execute(
@@ -124,19 +141,6 @@ class RegistrationRequests:
             else:
                 print("Ошибка при изменении статуса тренировки.")
 
-
-    @staticmethod
-    async def get_registration_by_workout_id(workout_id: int):
-        # TODO удалить метод, если не нужен
-        async with async_session() as session:
-            result = await session.execute(
-                (Registration, Workout)
-                .filter(Registration.workout_id == workout_id)
-                .join(Workout)
-            )
-            registrations = result.all()
-            return registrations
-
     @staticmethod
     async def get_workouts_by_user_id(user_id: int):
         async with async_session() as session:
@@ -155,7 +159,6 @@ class RegistrationRequests:
             #     print(f'{workout.date.strftime("%m.%d в %H:%M")} - {workout.type_name}')
             # print('\n'.join(message))
             return result.all()
-
 
     @staticmethod
     async def get_all_available_workouts():
@@ -185,7 +188,13 @@ class RegistrationRequests:
         return walks
 
     @staticmethod
-    async def get_workout_inspect(workout_id: int):
+    async def get_workout_users(workout_id: int) -> List[str]:
+        """
+        Получение имен пользователей, записанных на тренировку
+
+        :param workout_id: id Тренировки
+        :return: Список имен пользователей
+        """
         async with async_session() as session:
             result = await session.execute(
                 select(User.name)
@@ -194,6 +203,17 @@ class RegistrationRequests:
             )
         users = result.all()
         return users
+
+    @staticmethod
+    async def get_workout_username_and_id(workout_id: int):
+        async with async_session() as session:
+            result = await session.execute(
+                select(User.name, User.user_id)
+                .join(Registration, Registration.user_id == User.user_id)
+                .filter(Registration.workout_id == workout_id, Registration.status_id == 1)
+            )
+            users = result.all()
+            return users
 
     @staticmethod
     async def give_up_registration(registration_id: int):
@@ -215,6 +235,20 @@ class RegistrationRequests:
             )
             workout_info = result.all()
             return workout_info
+
+    @staticmethod
+    async def update_user_status(workout_id: int, user_id: int, status: int):
+        async with async_session() as session:
+            result = await session.execute(
+                update(Registration)
+                .filter(Registration.workout_id == workout_id,
+                        Registration.user_id == user_id,
+                        Registration.status_id == 1)  # Запись не отменялась
+                .values(status_id=status, is_payed=True)  # TODO при запуске оплаты изменить на False
+            )
+            await session.commit()
+            if result:
+                return 'Статус пользователя успешно изменен.'
 
 
 class ServiceRequests:
@@ -257,7 +291,7 @@ class ServiceRequests:
 
     @staticmethod
     async def add_statuses_types():
-        status_types = ['Записан', 'Посетил', 'Ожидает подтверждения', 'Отменил']
+        status_types = ['Записан', 'Посетил', 'Ожидает подтверждения', 'Отменил', 'Не посетил']
 
         async with async_session() as session:
             for status in status_types:

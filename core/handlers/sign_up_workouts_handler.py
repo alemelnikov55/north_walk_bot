@@ -1,5 +1,5 @@
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
 from database.requests import WorkoutsRequests, RegistrationRequests
 
@@ -9,7 +9,7 @@ async def sign_up_workout_handler(message: Message):
     await message.answer('Выберите тренировку для записи:', reply_markup=await choose_workout_kb())
 
 
-async def choose_workout_kb():
+async def choose_workout_kb() -> InlineKeyboardMarkup:
     """Клавиатура выбора тренировки"""
     choose_workout_kb_builder = InlineKeyboardBuilder()
 

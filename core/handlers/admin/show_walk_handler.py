@@ -1,4 +1,4 @@
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.requests import RegistrationRequests, WorkoutsRequests
@@ -10,10 +10,10 @@ async def show_walks_handler(message: Message):
 
     Выводи список доступных тренировок администратору с кнопокй для удаления тренировок
     """
-    await message.answer('Нажмите на или удалить ее', reply_markup=await all_workouts_info_kb())
+    await message.answer('Нажмите на чтобы увидеть подробности или удалить ее', reply_markup=await all_workouts_info_kb())
 
 
-async def all_workouts_info_kb():
+async def all_workouts_info_kb() -> InlineKeyboardMarkup:
     """
     Клавиатура с информацией о всех доступных тренировках
     """
@@ -45,24 +45,27 @@ async def inspect_workout(call: CallbackQuery):
     Обработчик кнопки проверки информации о тренировке
     """
     workout_id = int(call.data.split('_')[1])
-    workout_info = await RegistrationRequests.get_workout_inspect(workout_id)
-    walkers = [walker[0] for walker in workout_info]
-    walkers = "\n".join(walkers)
-    await call.message.answer(f"Информация о тренировке:\n{walkers}",
+    users_in_workout = await RegistrationRequests.get_workout_users(workout_id)
+    walkers = enumerate([walker[0] for walker in users_in_workout], 1) # Список учабников тренировки
+    listed_walkers = "\n".join([f'{list_info[0]}. {list_info[1]}' for list_info in walkers])
+    await call.message.answer(f"Информация о тренировке:\n{listed_walkers}",
                               reply_markup=await delete_workout_kb(workout_id))
     await call.answer('')
 
 
-async def delete_workout_kb(workout_id: int):
+async def delete_workout_kb(workout_id: int) -> InlineKeyboardMarkup:
     """
     Клавиатура для удаления тренировки
     """
-    delete_workout_kb_builder = InlineKeyboardBuilder()
-    delete_workout_kb_builder.button(text='Удалить', callback_data=f'delete_{workout_id}')
-    return delete_workout_kb_builder.as_markup()
+    moderate_workout_kb_builder = InlineKeyboardBuilder()
+    moderate_workout_kb_builder.button(text='Удалить', callback_data=f'delete_{workout_id}')
+    return moderate_workout_kb_builder.as_markup()
 
 
 async def delete_workout_kb_handler(call: CallbackQuery):
+    """
+    Обработчик кнопки подтверждения удаления тренировки администратором
+    """
     workout_id = int(call.data.split('_')[1])
     result = await WorkoutsRequests.delete_workout(workout_id)
     await call.message.answer(result)

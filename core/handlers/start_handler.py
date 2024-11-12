@@ -22,8 +22,8 @@ async def start_handler(message: Message, bot: Bot):
         print(e)
 
     await set_menu_commands(user_id, MainSettings.ADMIN_LIST, bot)
-    await message.answer(f'Привет, {user_name}! Рады приветсвовать тебя в рядах ходоков!\n'
-                         f'Это бот для записи на тренировке по Сереной ходьбе.'
+    await message.answer(f'Привет, {user_name}! Рады приветствовать тебя в рядах ходоков!\n'
+                         f'Это бот для записи на тренировки по Скандинавской ходьбе.'
                          f'Чтобы посмотреть доступные используй команду /sign_up\n'
                          f'Чтобы посмотреть свои записи на тренировки - /my_walks')
 
