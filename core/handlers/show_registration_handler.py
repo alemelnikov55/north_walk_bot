@@ -1,5 +1,8 @@
+"""
+Модель для проверки пользователем своих записей на тренировки и отмены существующих
+"""
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
 from database.requests import RegistrationRequests
 
@@ -11,15 +14,16 @@ async def show_my_registrations(message: Message):
     Оправляет список актуальных записей для пользователя
     """
     user_id = message.from_user.id
-    # registrations = await RegistrationRequests.get_workouts_by_user_id(user_id)
-
-    # answer_msg = [f'{workout.date.strftime("%m.%d в %H:%M")} - {workout.type_name}' for workout in registrations]
-
-    await message.answer('Если необходимо отменить запись - нажмите на тренировку и подтевердите отмену.\nВаши тренировки:',
+    await message.answer('Если необходимо отменить запись - нажмите на тренировку и подтвердите отмену.'
+                         '\nВаши тренировки:',
                          reply_markup=await show_all_my_registrations_kb(user_id))
 
 
-async def show_all_my_registrations_kb(user_id: int):
+async def show_all_my_registrations_kb(user_id: int) -> InlineKeyboardMarkup:
+    """
+    Клавиатура для демонстрации всех записей пользователя на тренировки
+    :param user_id:
+    """
     show_my_registration_kb_builder = InlineKeyboardBuilder()
 
     registrations = await RegistrationRequests.get_workouts_by_user_id(user_id)
@@ -47,7 +51,11 @@ async def give_up_handler(call: CallbackQuery):
     await call.answer('')
 
 
-async def delete_confirm_kb(registration_id: int):
+async def delete_confirm_kb(registration_id: int) -> InlineKeyboardMarkup:
+    """
+    Клавиатура для подтверждения удаления тренировки пользователем
+    :param registration_id:
+    """
     delete_kb = InlineKeyboardBuilder()
     delete_kb.button(text='Да', callback_data=f'delMy_{registration_id}')
     delete_kb.button(text='Нет', callback_data='delMy_no')
@@ -56,16 +64,18 @@ async def delete_confirm_kb(registration_id: int):
 
 
 async def delete_registration(call: CallbackQuery):
+    """
+    Обработчик клавиатуры подтверждения удаления тренировки.
+
+    Вносит изменения в БД, сообщает об успешном удалении
+    :param call:
+    """
     answer = call.data.split('_')[1]
     if answer == 'no':
         await call.message.answer('Ну нет так нет...')
         await call.answer('Ну нет так нет...')
         return
-    else:
-        answer = await RegistrationRequests.give_up_registration(int(answer))
-        await call.message.answer(answer)
-        await call.answer('Удаление прошло успешно')
 
-
-
-
+    answer = await RegistrationRequests.give_up_registration(int(answer))
+    await call.message.answer(answer)
+    await call.answer('Удаление прошло успешно')

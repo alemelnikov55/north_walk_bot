@@ -25,11 +25,14 @@ async def moderate_workout_kb() -> InlineKeyboardMarkup:
     last_week_workouts = await RegistrationRequests.get_last_week_workouts(7)
 
     for workout, workout_type in last_week_workouts:
-        date = workout.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
+        date = (workout.date.strftime('%d.%m | %H:%M')
+                .replace('08:30', '08:30☀')
+                .replace('20:30', '20:30🌓'))
         workout_type = workout_type.type_name
         workout_id = str(workout.workout_id)
 
-        moderate_workout_kb_builder.button(text=f'{date} | {workout_type}', callback_data=f'check_{workout_id}')
+        moderate_workout_kb_builder.button(text=f'{date} | {workout_type}',
+                                           callback_data=f'check_{workout_id}')
 
     moderate_workout_kb_builder.adjust(1)
     return moderate_workout_kb_builder.as_markup()
@@ -60,6 +63,11 @@ async def check_workout_kb_handler(call: CallbackQuery, bot: Bot):
 
 
 async def user_status_change_kb(user_id) -> InlineKeyboardMarkup:
+    """
+    Клавиатура для изменения статуса участника
+
+    Доступные кнопки: был/не был
+    """
     status_kb = InlineKeyboardBuilder()
 
     status_kb.button(text='Был ✅', callback_data=f'stat_y_{user_id}')

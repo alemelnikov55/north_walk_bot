@@ -33,7 +33,8 @@ async def set_menu_commands(user_id: int, admins: list, bot: Bot):
         # Команды для администраторов
         commands = [
             BotCommand(command='add_walk', description='Добавить тренировку'),
-            BotCommand(command='show_walk', description='Показывает заплантрованные тренировки'),
+            BotCommand(command='show_walk', description='Показывает запланированные тренировки'),
+            BotCommand(command='check_walks', description='Проверка посещаемости')
         ]
     else:
         # Команды для остальных пользователей

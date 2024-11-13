@@ -1,3 +1,6 @@
+"""
+Модуль отвечает за Запись пользователя на тренировку
+"""
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
@@ -5,7 +8,7 @@ from database.requests import WorkoutsRequests, RegistrationRequests
 
 
 async def sign_up_workout_handler(message: Message):
-    """Обработчик записи на тренировки - комада /запись"""
+    """Обработчик записи на тренировки - команда /sign_up"""
     await message.answer('Выберите тренировку для записи:', reply_markup=await choose_workout_kb())
 
 
@@ -31,6 +34,12 @@ async def choose_workout_kb() -> InlineKeyboardMarkup:
 
 
 async def sign_up_workout_to_db(call: CallbackQuery) -> None:
+    """Формирует запись на тренировку в БД
+
+    Принимает информацию от inline-кнопки
+    проверяет наличие такой записи, если запись уже существует, сообщает пользователю.
+    Если записи нет - добавляет запись в БД и сообщает пользователю, что он записан
+    """
     workout_id = int(call.data.split('_')[-1])
     user_id = call.from_user.id
 
@@ -55,4 +64,5 @@ async def sign_up_workout_to_db(call: CallbackQuery) -> None:
 
 
 async def no_available_workout_handler(call: CallbackQuery) -> None:
+    """Обработчик ответа на несуществующую тренировку"""
     await call.answer('Ожидайте добавления тренировок')
