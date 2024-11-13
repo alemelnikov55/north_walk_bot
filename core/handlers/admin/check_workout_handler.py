@@ -4,6 +4,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
 from database.requests import RegistrationRequests
+from utils.workouts_types import workout_types
 
 
 async def check_workouts(message: Message):
@@ -43,17 +44,19 @@ async def check_workout_kb_handler(call: CallbackQuery, bot: Bot):
     workout_id = int(call.data.split('_')[1])
     users = await RegistrationRequests.get_workout_username_and_id(workout_id)
     await call.answer('Выберите присутствовавших участников')
-    for user in users[::-1]:
-        text = f'{user.name}\n#{workout_id}'
+    for user_and_workout_info in users:
+        date = user_and_workout_info.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
+        text = (f'{user_and_workout_info.name}\n'
+                f'{date} | {user_and_workout_info.type_name} #{workout_id}')
         try:  # обработка исключения, если нет аватарки
-            file = await bot.get_user_profile_photos(user.user_id)
+            file = await bot.get_user_profile_photos(user_and_workout_info.user_id)
         except TelegramBadRequest as e:
             print(e)
-            await call.message.answer(text, reply_markup=await user_status_change_kb(user.user_id))
+            await call.message.answer(text, reply_markup=await user_status_change_kb(user_and_workout_info.user_id))
             continue
 
         photo = file.photos[0][0].file_id
-        await call.message.answer_photo(photo, caption=text, reply_markup=await user_status_change_kb(user.user_id))
+        await call.message.answer_photo(photo, caption=text, reply_markup=await user_status_change_kb(user_and_workout_info.user_id))
 
 
 async def user_status_change_kb(user_id) -> InlineKeyboardMarkup:
@@ -96,6 +99,6 @@ async def user_status_change_kb_handler(call: CallbackQuery, bot: Bot):
 
     result = await RegistrationRequests.update_user_status(workout_id, user_id, status)
     if result:
-        await call.message.answer('Статус изменен')
+        await call.answer('Статус изменен')
 
 

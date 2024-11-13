@@ -208,8 +208,10 @@ class RegistrationRequests:
     async def get_workout_username_and_id(workout_id: int):
         async with async_session() as session:
             result = await session.execute(
-                select(User.name, User.user_id)
+                select(User.name, User.user_id, Workout.date, WorkoutType.type_name)
                 .join(Registration, Registration.user_id == User.user_id)
+                .join(Workout, Workout.workout_id == Registration.workout_id)
+                .join(WorkoutType, WorkoutType.type_id == Workout.type_id)
                 .filter(Registration.workout_id == workout_id, Registration.status_id == 1)
             )
             users = result.all()
@@ -387,7 +389,7 @@ class StartServiceRequest:
 
 # asyncio.run(ServiceRequests.clear_all_data())
 # print((asyncio.run(WorkoutsRequests.get_type_workout_by_id(1))))
-# asyncio.run(RegistrationRequests.get_workout_inspect(1))
+# asyncio.run(RegistrationRequests.get_workout_username_and_id(3))
 
 
 # asyncio.run(create_and_fill_db())
