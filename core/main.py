@@ -28,6 +28,7 @@ init_bot = Bot(token=MainSettings.TOKEN, default=DefaultBotProperties(parse_mode
 
 
 async def start_bot(bot: Bot, dp: Dispatcher):
+    """Запуск бота и его обработчиков"""
     await bot.delete_webhook()
     dp.startup.register(start_bot_sup_handler)
     dp.shutdown.register(stop_bot_sup_handler)

@@ -1,3 +1,6 @@
+"""
+Модуль для управления существующими тренировками
+"""
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -20,7 +23,7 @@ async def all_workouts_info_kb() -> InlineKeyboardMarkup:
     show_workouts_kb_builder = InlineKeyboardBuilder()
 
     available_walks = await RegistrationRequests.get_all_available_workouts()
-    count_walkers_on_registration = await RegistrationRequests.count_sings_for_workouts()
+    count_walkers_on_registration = await RegistrationRequests.count_signs_for_workouts()
     pair_id_count = {str(pair[0]): pair[1] for pair in count_walkers_on_registration}
 
     if available_walks:

@@ -1,3 +1,6 @@
+"""
+Модуль констант для работы бота
+"""
 import dataclasses
 import os
 

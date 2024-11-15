@@ -1,10 +1,12 @@
+"""
+Модуль логики проверки посещаемости
+"""
 from aiogram import Bot
 from aiogram.types import CallbackQuery, Message
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
-from database.requests import RegistrationRequests
-from utils.workouts_types import workout_types
+from database.requests import RegistrationRequests, WorkoutsRequests
 
 
 async def check_workouts(message: Message):
@@ -22,7 +24,7 @@ async def moderate_workout_kb() -> InlineKeyboardMarkup:
     """
     moderate_workout_kb_builder = InlineKeyboardBuilder()
 
-    last_week_workouts = await RegistrationRequests.get_last_week_workouts(7)
+    last_week_workouts = await WorkoutsRequests.get_last_week_workouts(7)
 
     for workout, workout_type in last_week_workouts:
         date = (workout.date.strftime('%d.%m | %H:%M')

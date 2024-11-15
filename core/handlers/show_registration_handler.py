@@ -46,7 +46,7 @@ async def give_up_handler(call: CallbackQuery):
     workout_info = await RegistrationRequests.get_workout_info_by_reg_id(registration_id)
     info_for_send = workout_info[0].date.strftime("%m.%d в %H:%M |") + workout_info[0][1]
 
-    await call.message.answer(f'Вы уверены, что хотите удалить тренировку {info_for_send}',
+    await call.message.answer(f'Вы уверены, что хотите удалить тренировку\n{info_for_send}',
                               reply_markup=await delete_confirm_kb(registration_id))
     await call.answer('')
 
@@ -77,5 +77,6 @@ async def delete_registration(call: CallbackQuery):
         return
 
     answer = await RegistrationRequests.give_up_registration(int(answer))
-    await call.message.answer(answer)
-    await call.answer('Удаление прошло успешно')
+    if answer:
+        await call.message.answer('Запись на тренировку успешно отменена.')
+        await call.answer('Удаление прошло успешно')

@@ -1,3 +1,6 @@
+"""
+Модуль определения подключения к БД Postre
+"""
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from loader import DBSettings

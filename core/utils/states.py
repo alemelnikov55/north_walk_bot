@@ -1,3 +1,6 @@
+"""
+Модуль всех состояний
+"""
 from aiogram.filters.state import State, StatesGroup
 
 

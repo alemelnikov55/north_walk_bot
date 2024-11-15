@@ -1,12 +1,14 @@
+"""
+Модуль добавления тренировки
+"""
 from datetime import datetime, timedelta
 
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.markdown import hbold
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
-from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback, DialogCalendar, DialogCalendarCallback, get_user_locale
+from aiogram_calendar import SimpleCalendar
 
 from database.requests import ServiceRequests, WorkoutsRequests
 from utils.workouts_types import workout_types
@@ -27,6 +29,11 @@ async def add_workout(message: Message):
 
 
 async def process_simple_calendar(callback_query: CallbackQuery, callback_data: CallbackData, state: FSMContext):
+    """
+    Обработчик нажатия на дату в календаре
+
+    Отправляет выбранную дату и клавиатуру с выбором типа тренировки
+    """
     calendar = SimpleCalendar(show_alerts=True)
     calendar.set_dates_range(datetime.today(), datetime.today() + timedelta(days=100))
     selected, date = await calendar.process_selection(callback_query, callback_data)
@@ -98,10 +105,10 @@ async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext)
     new_date = date + time
 
     workout_type_id = data.get('workout_type_id')
-    workuot = await WorkoutsRequests.create_workout(new_date, workout_type_id, user_id)
+    workout = await WorkoutsRequests.create_workout(new_date, workout_type_id, user_id)
 
-    answer_message = (f'Тренировка <b>{workout_types[workuot.type_id]}</b> добавлена на <b>{workuot.date.strftime("%d.%m")}</b>'
-                      f' в <b>{workuot.date.strftime("%H:%M")}</b>.\n '
+    answer_message = (f'Тренировка <b>{workout_types[workout.type_id]}</b> добавлена на <b>{workout.date.strftime("%d.%m")}</b>'
+                      f' в <b>{workout.date.strftime("%H:%M")}</b>.\n '
                       f'Вы можете добавить еще тренировки.')
 
     if isinstance(message, CallbackQuery):
@@ -110,7 +117,11 @@ async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext)
         await message.answer(answer_message)
 
 
-async def choose_workout_type_kb():
+async def choose_workout_type_kb() -> InlineKeyboardMarkup:
+    """
+    Клавиатура для выбора типа тренировки
+    :return: InlineKeyboardMarkup
+    """
     keyboard = InlineKeyboardBuilder()
 
     types = await ServiceRequests.fetch_all_from_table('workout_types')
@@ -124,7 +135,7 @@ async def choose_workout_type_kb():
     return keyboard.as_markup()
 
 
-async def choose_time_for_workout_kb():
+async def choose_time_for_workout_kb() -> InlineKeyboardMarkup:
     """
     Клавиатура выбора времени для тренировки
     """

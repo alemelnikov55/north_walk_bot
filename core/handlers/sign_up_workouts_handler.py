@@ -42,24 +42,27 @@ async def sign_up_workout_to_db(call: CallbackQuery) -> None:
     """
     workout_id = int(call.data.split('_')[-1])
     user_id = call.from_user.id
+    # existing_check = await RegistrationRequests.is_already_exists(user_id, workout_id)
+    #
+    # if existing_check:
+    #     await call.message.answer('Вы уже записаны на эту тренировку')
+    #     await call.answer('Уже записаны')
+    #     return
 
-    existing_check = await RegistrationRequests.is_already_exists(user_id, workout_id)
+    sign_in_result = await RegistrationRequests.sign_in(user_id, workout_id)
 
-    if existing_check:
-        await call.message.answer('Вы уже записаны на эту тренировку')
-        await call.answer('Уже записаны')
+    if sign_in_result:
+        await call.message.answer(sign_in_result)
+        await call.answer('Вы записаны')
         return
 
-    await RegistrationRequests.sign_in(user_id, workout_id)
-
     workout_data = await WorkoutsRequests.get_workout_by_id(workout_id)
-    # print(workout_data[0], workout_data[1])
-    date = workout_data[0][0].date.strftime('%m.%d')
-    time = workout_data[0][0].date.strftime('%H:%M')
+
+    date = workout_data[0][0].date.strftime('%m.%d в %H:%M')
     workout_type = workout_data[0][1].type_name
 
     await call.message.answer(f'Вы записаны на тренировку:\n'
-                              f'<b>{date} в {time} тебя ждет {workout_type}</b>')
+                              f'<b>{date} тебя ждет {workout_type}</b>')
     await call.answer('Вы записаны на тренировку')
 
 

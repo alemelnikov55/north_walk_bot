@@ -1,3 +1,6 @@
+"""
+Фильтры для определения ролей
+"""
 from typing import List
 
 from aiogram.filters import BaseFilter

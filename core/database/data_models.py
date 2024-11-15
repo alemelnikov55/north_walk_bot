@@ -1,3 +1,6 @@
+"""
+Модуль объявления таблиц базы данных
+"""
 from sqlalchemy import Column, BigInteger, SmallInteger, String, ForeignKey, DateTime, func, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -7,6 +10,10 @@ Base = declarative_base()
 # Определение таблиц
 
 class User(Base):
+    """Таблица пользователей
+
+    идентификация происходит по user_id телеграмма
+    name: ФИ или username пользователя"""
     __tablename__ = 'users'
 
     user_id = Column(BigInteger, primary_key=True)
@@ -16,6 +23,9 @@ class User(Base):
 
 
 class Admin(Base):
+    """
+    Таблица администраторов
+    """
     __tablename__ = 'admins'
 
     admin_id = Column(BigInteger, primary_key=True)
@@ -24,6 +34,9 @@ class Admin(Base):
 
 
 class WorkoutType(Base):
+    """
+    Таблица видов тренировок
+    """
     __tablename__ = 'workout_types'
 
     type_id = Column(SmallInteger, primary_key=True)
@@ -31,6 +44,11 @@ class WorkoutType(Base):
 
 
 class Workout(Base):
+    """
+    Таблица тренировок
+
+    workout_id - уникальный идентификатор тренировки
+    """
     __tablename__ = 'workouts'
 
     workout_id = Column(SmallInteger, primary_key=True)
@@ -41,6 +59,7 @@ class Workout(Base):
 
 
 class Status(Base):
+    """Таблица статусов тренировок"""
     __tablename__ = 'statuses'
 
     status_id = Column(SmallInteger, primary_key=True)
@@ -48,6 +67,10 @@ class Status(Base):
 
 
 class Registration(Base):
+    """Таблица регистраций пользователей на тренировки
+
+    registration_id - уникальнй идентификатор записи
+    в данной таблице будет проводиться проверка оплаты"""
     __tablename__ = 'registrations'
 
     registration_id = Column(SmallInteger, primary_key=True, autoincrement=True)
@@ -59,6 +82,7 @@ class Registration(Base):
 
 
 class AttendanceHistory(Base):
+    """Лишняя таблица, подлежит удалению"""
     __tablename__ = 'attendance_history'
 
     history_id = Column(SmallInteger, primary_key=True)

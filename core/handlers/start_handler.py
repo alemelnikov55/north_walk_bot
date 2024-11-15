@@ -1,12 +1,21 @@
+"""
+Обработчик команды /start - регистрация пользователя в БД
+"""
 from aiogram import Bot
 from aiogram.types import Message, BotCommand, BotCommandScopeChat
-from sqlalchemy.exc import IntegrityError
 
 from loader import MainSettings
 from database.requests import UserRequest
 
 
 async def start_handler(message: Message, bot: Bot):
+    """
+    Обработчик команды /start - регистрация пользователя в БД
+
+    :param message:
+    :param bot:
+    :return:
+    """
     user_id = message.from_user.id
     print(user_id)
 
@@ -16,10 +25,7 @@ async def start_handler(message: Message, bot: Bot):
         user_name = message.from_user.full_name
 
     # Добавляем пользователя в БД и устанавливаем его команды
-    try:
-        await UserRequest.add_user(user_id, user_name)
-    except IntegrityError as e:
-        print(e)
+    await UserRequest.add_user(user_id, user_name)
 
     await set_menu_commands(user_id, MainSettings.ADMIN_LIST, bot)
     await message.answer(f'Привет, {user_name}! Рады приветствовать тебя в рядах ходоков!\n'
@@ -29,6 +35,14 @@ async def start_handler(message: Message, bot: Bot):
 
 
 async def set_menu_commands(user_id: int, admins: list, bot: Bot):
+    """
+    Установка меню в зависимости от роли пользователя
+
+    :param user_id:
+    :param admins:
+    :param bot:
+    :return:
+    """
     if user_id in admins:
         # Команды для администраторов
         commands = [

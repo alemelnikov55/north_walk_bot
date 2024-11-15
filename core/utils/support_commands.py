@@ -1,3 +1,6 @@
+"""
+Вспомогательные команды для оповещения администратора и страта бота
+"""
 from aiogram import Bot
 
 from loader import MainSettings
@@ -5,8 +8,10 @@ from database.requests import StartServiceRequest
 
 
 async def start_bot_sup_handler(bot: Bot) -> None:
-    """Запуск бота """
-    # await set_commands(bot)
+    """Запуск бота
+
+    Отправляет сообщение админимтратору и запускает процесс создания и проверки БД
+    """
     await StartServiceRequest.create_and_fill_db()
     await bot.send_message(MainSettings.SUPERUSER, 'Бот запущен')
 
