@@ -20,7 +20,7 @@ async def choose_workout_kb() -> InlineKeyboardMarkup:
     # print(available_workouts)
     if available_workouts:
         for workout, type_ in available_workouts:
-            date = workout.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
+            date = workout.date.strftime('%d.%m | %H:%M').replace('09:00', '09:00☀').replace('20:30', '20:30🌓')
             workout_type = type_.type_name
             workout_id = workout.workout_id
             choose_workout_kb_builder.button(text=f'{date} | {workout_type}', callback_data=f'signup_{workout_id}')

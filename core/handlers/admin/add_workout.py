@@ -65,7 +65,7 @@ async def set_time_for_workout(call: CallbackQuery, state: FSMContext):
     """
     time = call.data.split('_')[-1]
     if time == 'morning':
-        time = timedelta(hours=8, minutes=30)
+        time = timedelta(hours=9, minutes=00)
         await state.update_data(time=time)
         await add_workout_to_db(call, state)
     elif time == 'evening':
