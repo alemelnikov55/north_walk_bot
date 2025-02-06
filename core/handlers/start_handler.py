@@ -3,6 +3,7 @@
 """
 from aiogram import Bot
 from aiogram.types import Message, BotCommand, BotCommandScopeChat
+from sqlalchemy.exc import InvalidRequestError
 
 from loader import MainSettings
 from database.requests import UserRequest
@@ -25,7 +26,10 @@ async def start_handler(message: Message, bot: Bot):
         user_name = message.from_user.full_name
 
     # Добавляем пользователя в БД и устанавливаем его команды
-    await UserRequest.add_user(user_id, user_name)
+    try:
+        await UserRequest.add_user(user_id, user_name)
+    except InvalidRequestError as e:
+        print(e)
 
     await set_menu_commands(user_id, MainSettings.ADMIN_LIST, bot)
     await message.answer(f'Привет, {user_name}! Рады приветствовать тебя в рядах ходоков!\n'
