@@ -3,23 +3,29 @@
 """
 from datetime import datetime, timedelta
 
+from aiogram import Bot
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardMarkup
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram_calendar import SimpleCalendar
 
+from database.data_models import Workout
 from database.requests import ServiceRequests, WorkoutsRequests
 from utils.workouts_types import workout_types
 from utils.states import ChooseWorkoutTimeState
+from utils.support_func import get_formatted_list_of_users_by_workout_id
+
+from loader import MainSettings
 
 
 async def add_workout(message: Message):
     """
     Обработчик команды /add_walk
 
-    Вызывает клавиатуру с календарем для выбора дыты
+    Вызывает клавиатуру с календарем для выбора даты
     """
     calendar = SimpleCalendar(show_alerts=True)
     await message.answer(
@@ -59,26 +65,31 @@ async def choose_time_for_workout_handler(call: CallbackQuery, state: FSMContext
     await call.answer('Время выбрано')
 
 
-async def set_time_for_workout(call: CallbackQuery, state: FSMContext):
+async def set_time_for_workout(call: CallbackQuery, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):
     """
     Обработка, выбранного времени для тренировки
     """
     time = call.data.split('_')[-1]
     if time == 'morning':
         time = timedelta(hours=9, minutes=00)
-        await state.update_data(time=time)
-        await add_workout_to_db(call, state)
+        # await state.update_data(time=time)
+        # await add_workout_to_db(call, bot, state, scheduler)
     elif time == 'evening':
         time = timedelta(hours=20, minutes=30)
-        await state.update_data(time=time)
-        await add_workout_to_db(call, state)
     else:
         await call.message.answer('Введите время тренировки в формате ЧЧ:MM')
         await state.set_state(ChooseWorkoutTimeState.CHOOSE_TIME)
+    await state.update_data(time=time)
+    workout_data = await add_workout_to_db(call, state)
+    # создание задачи на отправку сообщения за час до начала тренировки
+    scheduler.add_job(remainder_with_list_of_users,
+                      trigger='date',
+                      run_date=workout_data.date - timedelta(hours=1),
+                      kwargs={'bot': bot, 'workout_id': workout_data.workout_id})
     await call.answer('Время выбрано')
 
 
-async def custom_time_handler(message: Message, state: FSMContext):
+async def custom_time_handler(message: Message, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):
     """
     Обработчик ввода времени для тренировки вручную
     """
@@ -88,12 +99,16 @@ async def custom_time_handler(message: Message, state: FSMContext):
         await state.update_data(time=time)
         await state.set_state(ChooseWorkoutTimeState.ADD_WORKOUT)
 
-        await add_workout_to_db(message, state)
+        workout_data = await add_workout_to_db(message, state)
+        scheduler.add_job(remainder_with_list_of_users,
+                          trigger='date',
+                          run_date=workout_data.date - timedelta(hours=1),
+                          kwargs={'bot': bot, 'workout_id': workout_data.workout_id})
     else:
         await message.answer('Введите время тренировки в формате ЧЧ:MM')
 
 
-async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext) -> None:
+async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext) -> Workout:
     """
     Добавление тренировки в базу данных
     """
@@ -106,7 +121,6 @@ async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext)
 
     workout_type_id = data.get('workout_type_id')
     workout = await WorkoutsRequests.create_workout(new_date, workout_type_id, user_id)
-
     answer_message = (f'Тренировка <b>{workout_types[workout.type_id]}</b> добавлена на <b>{workout.date.strftime("%d.%m")}</b>'
                       f' в <b>{workout.date.strftime("%H:%M")}</b>.\n '
                       f'Вы можете добавить еще тренировки.')
@@ -115,6 +129,22 @@ async def add_workout_to_db(message: Message | CallbackQuery, state: FSMContext)
         await message.message.answer(answer_message)
     else:
         await message.answer(answer_message)
+    return workout
+
+
+async def remainder_with_list_of_users(bot: Bot, workout_id: int):
+    """
+    Отправляет уведомления тренеру, сообщая список участников за час до занятия
+    :param bot:
+    :param workout_id:
+    :return:
+    """
+    users_list = await get_formatted_list_of_users_by_workout_id(workout_id)
+    for user_id in (MainSettings.SUPERUSER, 6416472110):
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"Записаны:\n{users_list}",
+        )
 
 
 async def choose_workout_type_kb() -> InlineKeyboardMarkup:

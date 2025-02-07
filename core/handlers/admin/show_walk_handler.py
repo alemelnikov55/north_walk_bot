@@ -5,6 +5,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.requests import RegistrationRequests, WorkoutsRequests
+from utils.support_func import get_formatted_list_of_users_by_workout_id
 
 
 async def show_walks_handler(message: Message):
@@ -28,7 +29,7 @@ async def all_workouts_info_kb() -> InlineKeyboardMarkup:
 
     if available_walks:
         for workout, type_ in available_walks:
-            date = workout.date.strftime('%d.%m | %H:%M').replace('08:30', '08:30☀').replace('20:30', '20:30🌓')
+            date = workout.date.strftime('%d.%m | %H:%M').replace('09:00', '09:00☀').replace('20:30', '20:30🌓')
             workout_type = type_.type_name
             workout_id = str(workout.workout_id)
 
@@ -48,9 +49,7 @@ async def inspect_workout(call: CallbackQuery):
     Обработчик кнопки проверки информации о тренировке
     """
     workout_id = int(call.data.split('_')[1])
-    users_in_workout = await RegistrationRequests.get_workout_users(workout_id)
-    walkers = enumerate([walker[0] for walker in users_in_workout], 1) # Список учабников тренировки
-    listed_walkers = "\n".join([f'{list_info[0]}. {list_info[1]}' for list_info in walkers])
+    listed_walkers = await get_formatted_list_of_users_by_workout_id(workout_id)
     await call.message.answer(f"Информация о тренировке:\n{listed_walkers}",
                               reply_markup=await delete_workout_kb(workout_id))
     await call.answer('')

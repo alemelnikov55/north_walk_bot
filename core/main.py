@@ -4,10 +4,12 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram_calendar import SimpleCalendarCallback
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from loader import MainSettings
 from utils.support_commands import start_bot_sup_handler, stop_bot_sup_handler
 from utils.states import ChooseWorkoutTimeState
+from utils.middelwares import ApschedulerMiddleware
 
 from filters.is_admin_filter import IsAdmin
 
@@ -30,6 +32,11 @@ init_bot = Bot(token=MainSettings.TOKEN, default=DefaultBotProperties(parse_mode
 async def start_bot(bot: Bot, dp: Dispatcher):
     """Запуск бота и его обработчиков"""
     await bot.delete_webhook()
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler.start()
+
+    dp.update.middleware.register(ApschedulerMiddleware(scheduler))
+
     dp.startup.register(start_bot_sup_handler)
     dp.shutdown.register(stop_bot_sup_handler)
 
