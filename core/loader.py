@@ -24,3 +24,7 @@ class DBSettings:
     POSTGRES_USER = os.getenv('POSTGRES_USER')
     POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
     DB_NAME = os.getenv('DB_NAME')
+
+
+class RedisSettings:
+    REDIS_HOST = os.getenv('REDIS_DB_URL')

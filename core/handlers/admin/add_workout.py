@@ -65,7 +65,7 @@ async def choose_time_for_workout_handler(call: CallbackQuery, state: FSMContext
     await call.answer('Время выбрано')
 
 
-async def set_time_for_workout(call: CallbackQuery, bot: Bot, state: FSMContext, scheduler: AsyncIOScheduler):
+async def set_time_for_workout(call: CallbackQuery, state: FSMContext, scheduler: AsyncIOScheduler):
     """
     Обработка, выбранного времени для тренировки
     """
@@ -85,7 +85,7 @@ async def set_time_for_workout(call: CallbackQuery, bot: Bot, state: FSMContext,
     scheduler.add_job(remainder_with_list_of_users,
                       trigger='date',
                       run_date=workout_data.date - timedelta(hours=1),
-                      kwargs={'bot': bot, 'workout_id': workout_data.workout_id})
+                      kwargs={'workout_id': workout_data.workout_id})
     await call.answer('Время выбрано')
 
 
@@ -103,7 +103,7 @@ async def custom_time_handler(message: Message, bot: Bot, state: FSMContext, sch
         scheduler.add_job(remainder_with_list_of_users,
                           trigger='date',
                           run_date=workout_data.date - timedelta(hours=1),
-                          kwargs={'bot': bot, 'workout_id': workout_data.workout_id})
+                          kwargs={'workout_id': workout_data.workout_id})
     else:
         await message.answer('Введите время тренировки в формате ЧЧ:MM')
 

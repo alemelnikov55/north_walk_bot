@@ -6,8 +6,7 @@ from typing import Any, Callable, Dict, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
+from apscheduler_di import ContextSchedulerDecorator
 
 
 @dataclasses.dataclass
@@ -15,7 +14,7 @@ class ApschedulerMiddleware(BaseMiddleware):
     """
     middelware для Добавления в сообщение scheduler
     """
-    def __init__(self, scheduler: AsyncIOScheduler):
+    def __init__(self, scheduler: ContextSchedulerDecorator):
         self.scheduler = scheduler
 
     async def __call__(
@@ -25,5 +24,6 @@ class ApschedulerMiddleware(BaseMiddleware):
             data: Dict[str, Any],
     ) -> Any:
         data['scheduler'] = self.scheduler
-        return await handler(event, data)
+        result = await handler(event, data)
+        return result
         # Если в хэндлере сделать return, то это значение попадёт в result

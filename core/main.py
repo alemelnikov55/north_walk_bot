@@ -3,10 +3,13 @@ import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram_calendar import SimpleCalendarCallback
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler_di import ContextSchedulerDecorator
 
-from loader import MainSettings
+from loader import MainSettings, RedisSettings
 from utils.support_commands import start_bot_sup_handler, stop_bot_sup_handler
 from utils.states import ChooseWorkoutTimeState
 from utils.middelwares import ApschedulerMiddleware
@@ -25,14 +28,26 @@ from handlers.show_registration_handler import show_my_registrations, give_up_ha
 from handlers.start_handler import start_handler
 
 
-dispatcher = Dispatcher()
+storage = RedisStorage.from_url(RedisSettings.REDIS_HOST)
+jobstores = {
+    'default': RedisJobStore(
+        jobs_key='dispatcher_trips_jobs',
+        run_times_key='dispatcher_trips_running',
+        host='localhost',
+        db=2,
+        port=6379,
+    )
+}
+
+dispatcher = Dispatcher(storage=storage)
 init_bot = Bot(token=MainSettings.TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
 
 
 async def start_bot(bot: Bot, dp: Dispatcher):
     """Запуск бота и его обработчиков"""
     await bot.delete_webhook()
-    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler = ContextSchedulerDecorator(AsyncIOScheduler(timezone='Europe/Moscow', jobjobstores=jobstores))
+    scheduler.ctx.add_instance(bot, declared_class=Bot)
     scheduler.start()
 
     dp.update.middleware.register(ApschedulerMiddleware(scheduler))
